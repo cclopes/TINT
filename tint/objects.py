@@ -191,8 +191,8 @@ def get_object_prop(image1, grid1, field, record, params):
                                                                  cent_met[0],
                                                                  projparams)
 
-        longitude.append(np.round(lon[0], 4))
-        latitude.append(np.round(lat[0], 4))
+        longitude.append(np.round(lon, 4))
+        latitude.append(np.round(lat, 4))
 
         # raw 3D grid stats
         obj_slices = [raw3D[:, ind[0], ind[1]] for ind in obj_index]

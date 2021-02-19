@@ -183,98 +183,112 @@ def lagrangian_view(tobj, grids, tmp_dir, uid=None, vmin=-8, vmax=64,
         lvyticks = np.arange(lvylim[0], lvylim[1], stepsize)
         llxticks = np.arange(xlim[0], xlim[1], stepsize*1e2)
         llyticks = np.arange(ylim[0], ylim[1], stepsize*1e2)
+        # print(len(lvyticks), len(llyticks))
 
         fig = plt.figure(figsize=(15, 19))
 
-        fig.suptitle('Cell ' + uid + ' Scan ' + str(nframe), fontsize=22)
+        fig.suptitle('Cell ' + uid + ' Scan ' + str(nframe) + \
+            '\n' + str(pyart.util.datetime_from_grid(grid)), fontsize=22)
         # plt.axis('off')
 
-        gs = fig.add_gridspec(3, 3,
-                              width_ratios=[1, 2, 0.01], height_ratios=[1, 2, 1])
+        gs = fig.add_gridspec(3, 3, wspace=0.3, hspace=0.25,
+                              width_ratios=[1, 2, 0.005], 
+                              height_ratios=[1, 2, 1])
 
         # Lagrangian View
-        ax = fig.add_subplot(gs[1, 1:], projection=projection)
+        ax1 = fig.add_subplot(gs[1, 1:], projection=projection)
 
         display.plot_grid(field, level=get_grid_alt(grid_size, alt),
                           vmin=vmin, vmax=vmax, embelish=False,
                           mask_outside=False, cmap=cmap, colorbar_flag=False, 
-                          ax=ax, fig=fig, projection=projection)
+                          ax=ax1, fig=fig, projection=projection)
 
         display.plot_crosshairs(lon=lon, lat=lat, linestyle='--', 
-                                color='k', linewidth=3, ax=ax)
+                                color='k', linewidth=3, ax=ax1)
+        
+        gl = ax1.gridlines(
+            crs=ccrs.PlateCarree(), draw_labels=False,
+            xlocs=np.round(lvxticks, 2), ylocs=np.round(lvyticks, 2)
+        )
+        # gl.top_labels = gl.right_labels = False
 
-        ax.set_xlim(lvxlim[0], lvxlim[1])
-        ax.set_ylim(lvylim[0], lvylim[1])
+        ax1.set_xlim(lvxlim[0], lvxlim[1])
+        ax1.set_ylim(lvylim[0], lvylim[1])
 
-        ax.set_xticks(lvxticks)
-        ax.set_yticks(lvyticks)
-        ax.set_xticklabels(np.round(lvxticks, 2))
-        ax.set_yticklabels(np.round(lvyticks, 2))
+        ax1.set_xticks(lvxticks)
+        ax1.set_yticks(lvyticks)
+        ax1.set_xticklabels(np.round(lvxticks, 2))
+        ax1.set_yticklabels(np.round(lvyticks, 2))
 
-        ax.set_title('Top-Down View at ' + 
-                      str(get_grid_alt(grid_size, alt) + 1) +
+        ax1.set_title('Top-Down View at ' + 
+                      str(alt/1000) +
                       ' km', fontsize=title_font)
-        ax.set_xlabel('Longitude [° E]',
+        ax1.set_xlabel('Longitude [° E]',
                        fontsize=axes_font)
-        ax.set_ylabel('Latitude [° N]',
+        ax1.set_ylabel('Latitude [° N]',
                        fontsize=axes_font)
-        cb = fig.colorbar(display.mappables[-1], ax=ax, fraction=0.05, 
+        cb = fig.colorbar(display.mappables[-1], ax=ax1, fraction=0.05, 
                           orientation='vertical')
         cb.set_label(
             grid.fields[field]['standard_name'].replace('_', ' ').title() + 
             ' (' + grid.fields[field]['units'] + ')', fontsize=axes_font)
 
         # Latitude Cross Section
-        ax = fig.add_subplot(gs[0, 1])
+        ax2 = fig.add_subplot(gs[0, 1])
         display.plot_latitude_slice(field, lon=lon, lat=lat,
                                     title_flag=False,
                                     colorbar_flag=False, edges=False,
                                     vmin=vmin, vmax=vmax, mask_outside=False,
-                                    cmap=cmap,
-                                    ax=ax)
+                                    cmap=cmap, axislabels_flag=False,
+                                    ax=ax2)
+        ax2.grid()
+        ax2.set_xlim(xlim[0], xlim[1])
+        ax2.set_xticks(llxticks)
+        ax2.set_xticklabels(np.round(llxticks, 0).astype(int))
 
-        ax.set_xlim(xlim[0], xlim[1])
-        ax.set_xticks(llxticks)
-        ax.set_xticklabels(np.round(llxticks, 0).astype(int))
-
-        ax.set_title('Latitude Cross Section', fontsize=title_font)
-        ax.set_xlabel('East West Distance From Origin (km)' + '\n',
+        ax2.set_title('Latitudinal Cross Section', fontsize=title_font)
+        ax2.set_xlabel('East West Distance from Origin (km)', 
                        fontsize=axes_font)
-        ax.set_ylabel('Distance Above Origin (km)', fontsize=axes_font)
-        # ax.set_aspect(aspect=1.1)
+        ax2.set_ylabel('Distance Above Origin (km)', fontsize=axes_font)
+        # ax2.set_aspect(aspect=0.3)
 
         # Longitude Cross Section
-        ax = fig.add_subplot(gs[1, 0])
-        trans = mpl.transforms.Affine2D().rotate_deg(90) + ax.transData
+        ax3 = fig.add_subplot(gs[1, 0])
+        trans = mpl.transforms.Affine2D().rotate_deg(90) + ax3.transData
 
         display.plot_longitude_slice(field, lon=lon, lat=lat,
                                      title_flag=False, transform=trans,
                                      colorbar_flag=False, edges=False,
                                      vmin=vmin, vmax=vmax, mask_outside=False,
-                                     cmap=cmap,
-                                     ax=ax)
-        ax.set_ylim(ylim[0], ylim[1])
-        ax.set_yticks(llyticks)
-        ax.set_yticklabels(np.round(llyticks, 0).astype(int))
+                                     cmap=cmap,     
+                                     ax=ax3)
+        ax3.grid()
+        ax3.set_ylim(ylim[0], ylim[1])
+        ax3.set_yticks(llyticks)
+        ax3.set_yticklabels(np.round(llyticks, 0).astype(int))
+        ax3.set_xticklabels([20, 15, 10, 5])
 
-        ax.set_title('Longitudinal Cross Section', fontsize=title_font)
-        ax.set_ylabel('North South Distance From Origin (km)',
+        ax3.set_title('Longitudinal Cross Section', fontsize=title_font)
+        ax3.set_ylabel('North South Distance from Origin (km)', 
                        fontsize=axes_font)
-        ax.set_xlabel('Distance Above Origin (km)', fontsize=axes_font)
-        # ax.set_aspect(aspect=1.1)
+        ax3.set_xlabel('Distance Above Origin (km)', fontsize=axes_font)
+        # ax3.set_aspect(aspect=1.7)
 
         # Time Series Statistic
         max_field = cell['max']
         plttime = cell['time']
 
         # Plot
-        ax = fig.add_subplot(gs[2, :])
-        ax.plot(plttime, max_field, color='b', linewidth=3)
-        ax.axvline(x=plttime[nframe], linewidth=4, color='r')
-        ax.set_title('Time Series', fontsize=title_font)
-        ax.set_xlabel('Time (UTC) \n Lagrangian Viewer Time',
+        ax4 = fig.add_subplot(gs[2, :])
+        ax4.plot(plttime, max_field, color='b', linewidth=3)
+        ax4.axvline(x=plttime[nframe], linewidth=4, color='r')
+        ax4.grid()
+        ax4.set_title('Time Series', fontsize=title_font)
+        ax4.set_xlabel('Time (UTC) \n Lagrangian Viewer Time',
                        fontsize=axes_font)
-        ax.set_ylabel('Maximum ' + field, fontsize=axes_font)
+        ax4.set_ylabel('Maximum ' + field, fontsize=axes_font)
+
+        plt.subplots_adjust(top=0.92)
 
         # plot and save figure
         fig.savefig(
